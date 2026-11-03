@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台控制台</title>
+<style>
+  :root{--bg:#f4f6fa;--card:#fff;--line:#dfe5ee;--navy:#1f3864;--blue:#2e5c8a;
+    --text:#2b2b2b;--dim:#6b7686;--red:#a53a3a;--ok:#2e7d54}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px}
+  header{background:var(--navy);color:#fff;padding:13px 20px;display:flex;justify-content:space-between;align-items:center}
+  header h1{margin:0;font-size:16px}
+  header a{color:#c6d6e8;text-decoration:none;font-size:13px;margin-left:16px}
+  .wrap{max-width:1160px;margin:0 auto;padding:16px 16px 80px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 17px;margin-bottom:13px}
+  .card h2{margin:0 0 11px;font-size:13.5px;color:var(--navy);letter-spacing:.5px}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .row:first-of-type{margin-top:0}
+  button{font-family:inherit;font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;color:var(--text);cursor:pointer}
+  button:hover{border-color:#b9c6d8}
+  button.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+  button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  button.danger{color:var(--red);border-color:#e6c8c8}
+  input,select{font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);
+    border-radius:8px;background:#fff}
+  input[type=number]{width:76px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 5px;text-align:left}
+  th{background:#f7f9fc;color:var(--dim);font-size:12px;font-weight:600}
+  td input{width:100%;padding:5px 6px}
+  td.n,th.n{text-align:center;width:48px}
+  .stat{display:flex;gap:24px;flex-wrap:wrap}
+  .stat div b{font-size:20px;color:var(--navy)}
+  .stat div span{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  .hint{color:var(--dim);font-size:12px;line-height:1.8}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1f3864;color:#fff;
+    padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:.25s}
+  .toast.show{opacity:1}
+  .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+  .login{max-width:340px;margin:12vh auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px}
+  .login input{width:100%;margin-bottom:11px;padding:10px}
+  .login button{width:100%;padding:11px;background:var(--navy);color:#fff;border:0;border-radius:8px}
+  .warn{background:#fff8e6;border:1px solid #f0d9a8;color:#8a6a1f;padding:10px 13px;border-radius:8px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+  <h1>歌手大赛 · 后台控制台</h1>
+  <div><a href="screen.html" target="_blank">大屏 ↗</a><a href="vote.html" target="_blank">投票页 ↗</a>
+    <a href="#" id="logout">退出</a></div>
+</header>
+
+<div id="loginBox" class="login" style="display:none">
+  <h2 style="margin:0 0 14px;font-size:15px">请输入后台口令</h2>
+  <input id="pass" type="password" placeholder="默认 8888">
+  <button id="doLogin">登 录</button>
+  <p class="hint" style="margin-top:12px">口令写在 app/config.js 里，仅作进门提示，不是真正的安全防护。</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="card">
+    <h2>实时状态</h2>
+    <div class="stat">
+      <div><b id="sStatus">-</b><span>当前环节</span></div>
+      <div><b id="sVotes">0</b><span>总票数</span></div>
+      <div><b id="sPlayers">0</b><span>选手数</span></div>
+      <div><b id="sCode">-</b><span>投票口令</span></div>
+      <div><b id="sRemote">-</b><span>数据源</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>流程控制</h2>
+    <div class="row" id="statusBtns">
+      <button data-st="idle">待机</button>
+      <button data-st="running">比赛进行</button>
+      <button data-st="voting">开放投票</button>
+      <button data-st="closed">投票截止</button>
+      <button data-st="reveal_judge">揭晓评委分</button>
+      <button data-st="reveal_audience">揭晓观众票</button>
+      <button data-st="final">最终排名</button>
+    </div>
+    <div class="row">
+      <span class="hint">投票时长</span><input type="number" id="dur" value="180" min="10"><span class="hint">秒</span>
+      <button id="startVote" class="pri">开始倒计时并开放</button>
+      <span class="sep"></span>
+      <button id="nextPlayer">下一位 ▶</button>
+      <span class="hint" id="curP"></span>
+    </div>
+    <div class="row">
+      <span class="hint">口令</span><input id="codeInput" style="width:104px;letter-spacing:3px;text-transform:uppercase">
+      <button id="newCode">随机换</button>
+      <span class="sep"></span>
+      <span class="hint">揭晓进度</span><input type="number" id="revealNum" value="0" min="0" style="width:64px">
+      <button id="revealSet">设置</button><button id="revealNext">揭下一位</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>投票规则</h2>
+    <div class="row">
+      <span class="hint">每台设备最多可投</span>
+      <input type="number" id="maxV" value="3" min="1" max="20" style="width:70px">
+      <span class="hint">票（同一选手只能投一次，超出会被拒绝）</span>
+      <button id="saveMax" class="pri">保存</button>
+    </div>
+    <div class="row">
+      <span class="hint">评委权重</span><input type="number" id="wj" value="60" min="0" style="width:66px"><span class="hint">%</span>
+      <span class="hint">观众权重</span><input type="number" id="wa" value="40" min="0" style="width:66px"><span class="hint">%</span>
+      <button id="saveW">保存权重</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>选手名单</h2>
+    <table id="pTable">
+      <thead><tr><th class="n">序号</th><th>姓名</th><th>曲目</th><th>班级</th><th>当前票数</th><th class="n">操作</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="row">
+      <button id="addPlayer">+ 添加</button>
+      <button id="savePlayers" class="pri">保存名单</button>
+      <span class="hint">序号决定出场顺序，改完记得保存</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>评委打分（10 分制，留空表示未打）</h2>
+    <div class="row">
+      <span class="hint">评委人数</span><input type="number" id="jCount" value="5" min="1" max="20" style="width:68px">
+      <button id="jSet">应用</button>
+      <button id="saveJudge" class="pri">保存评委分</button>
+    </div>
+    <table id="jTable"><thead></thead><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>站点与数据</h2>
+    <div class="row">
+      <span class="hint">标题</span><input id="tTitle" style="width:230px">
+      <span class="hint">副标题</span><input id="tSub" style="width:200px">
+      <button id="saveMeta">保存</button>
+    </div>
+    <div class="row">
+      <button id="exportCsv">导出成绩 CSV</button>
+      <button id="resetVotes" class="danger">清空所有投票</button>
+    </div>
+    <p class="warn" style="margin-top:12px">
+      数据直接写在 GitHub 仓库的 <b>data/</b> 目录里。<b>比赛结束后请到 GitHub 上删除或重置 token</b>，
+      因为前端代码里的 token 任何人打开网页都能看到。
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app/config.js"></script>
+<script src="app/store.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const ADMIN_KEY = (window.APP_CONFIG && window.APP_CONFIG.adminKey) || '8888';
+let META = null, VOTES = [], SC = null;
+
+function toast(m){
+  const t = $('#toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+$('#doLogin').addEventListener('click', () => {
+  if ($('#pass').value === ADMIN_KEY){
+    sessionStorage.setItem('sv_admin', '1'); boot();
+  } else toast('口令不对');
+});
+$('#logout').addEventListener('click', e => {
+  e.preventDefault(); sessionStorage.removeItem('sv_admin');
+  $('#app').style.display='none'; $('#loginBox').style.display='block';
+});
+
+async function load(){
+  const m = await Store.read('meta.json');
+  META = m.data;
+  const v = await Store.read('votes.json');
+  VOTES = v.data || [];
+  SC = computeScores(META, VOTES);
+}
+
+function paint(){
+  $('#sStatus').textContent = ({idle:'待机',running:'比赛进行',voting:'投票开放',closed:'投票截止',
+    reveal_judge:'揭晓评委分',reveal_audience:'揭晓观众票',final:'最终排名'})[META.status] || META.status;
+  $('#sVotes').textContent = SC.totalVotes;
+  $('#sPlayers').textContent = META.players.length;
+  $('#sCode').textContent = META.voteCode;
+  $('#sRemote').textContent = Store.remote ? 'GitHub' : '本地演示';
+  $$('#statusBtns button').forEach(b => b.classList.toggle('on', b.dataset.st === META.status));
+  $('#curP').textContent = '当前第 ' + ((META.currentPlayer||0)+1) + ' 位';
+  if (document.activeElement !== $('#codeInput')) $('#codeInput').value = META.voteCode;
+  if (document.activeElement !== $('#revealNum')) $('#revealNum').value = META.revealCount || 0;
+  $('#maxV').value = META.maxVotesPerDevice || 1;
+  $('#wj').value = Math.round((META.weights.judge||0.6)*100);
+  $('#wa').value = Math.round((META.weights.audience||0.4)*100);
+  $('#tTitle').value = META.title; $('#tSub').value = META.subtitle;
+  paintPlayers(); paintJudges();
+}
+
+function paintPlayers(){
+  const tb = $('#pTable tbody');
+  const counts = {}; VOTES.forEach(v => counts[v.pid] = (counts[v.pid]||0)+1);
+  tb.innerHTML = META.players.slice().sort((a,b)=>a.no-b.no).map(p =>
+    '<tr data-id="' + p.id + '"><td class="n"><input data-k="no" value="' + p.no + '" style="width:44px;text-align:center"></td>' +
+    '<td><input data-k="name" value="' + esc(p.name) + '"></td>' +
+    '<td><input data-k="song" value="' + esc(p.song) + '"></td>' +
+    '<td><input data-k="class" value="' + esc(p.class) + '"></td>' +
+    '<td class="num">' + (counts[p.id]||0) + '</td>' +
+    '<td class="n"><button class="del danger">删</button></td></tr>').join('');
+  tb.querySelectorAll('.del').forEach(b => b.addEventListener('click', e => e.target.closest('tr').remove()));
+}
+
+function paintJudges(){
+  const n = META.judgeCount || 5;
+  const list = META.players.slice().sort((a,b)=>a.no-b.no);
+  $('#jTable thead').innerHTML = '<tr><th class="n">序号</th><th>姓名</th>' +
+    Array.from({length:n},(_,i) => '<th class="n">评委' + (i+1) + '</th>').join('') + '</tr>';
+  $('#jTable tbody').innerHTML = list.map(p =>
+    '<tr data-id="' + p.id + '"><td class="n">' + p.no + '</td><td>' + esc(p.name) + '</td>' +
+    Array.from({length:n},(_,i) =>
+      '<td class="n"><input data-j="' + i + '" value="' +
+      (p.judges && p.judges[i] != null ? p.judges[i] : '') + '" style="width:60px;text-align:center"></td>').join('') +
+    '</tr>').join('');
+  $('#jCount').value = n;
+}
+
+/* ---------------- 写 meta ---------------- */
+async function patchMeta(fn, msg){
+  const res = await Store.update('meta.json', (base) => fn(base || META), msg);
+  if (res.ok){ META = res.data; paint(); toast('已保存'); }
+  else toast(res.reason === 'rejected' ? '没有变化' : (res.reason || '保存失败'));
+  return res;
+}
+
+/* ---------------- 事件 ---------------- */
+$$('#statusBtns button').forEach(b => b.addEventListener('click', () => {
+  patchMeta(m => { m.status = b.dataset.st; if (b.dataset.st==='voting'||b.dataset.st==='reveal_judge') m.revealCount = 0; return m; }, 'status');
+}));
+
+$('#startVote').addEventListener('click', () => {
+  const dur = Number($('#dur').value) || 180;
+  patchMeta(m => { m.status='voting'; m.deadline = Date.now() + dur*1000; m.revealCount = 0; return m; }, 'open vote');
+});
+
+$('#nextPlayer').addEventListener('click', () => {
+  patchMeta(m => { m.currentPlayer = Math.min((m.currentPlayer||0)+1, m.players.length-1); return m; }, 'next');
+});
+
+$('#newCode').addEventListener('click', () => {
+  const c = Math.random().toString(36).slice(2,6).toUpperCase();
+  patchMeta(m => { m.voteCode = c; return m; }, 'code');
+});
+$('#codeInput').addEventListener('change', () => {
+  patchMeta(m => { m.voteCode = $('#codeInput').value.toUpperCase(); return m; }, 'code');
+});
+
+$('#revealSet').addEventListener('click', () => {
+  patchMeta(m => { m.revealCount = Number($('#revealNum').value)||0; return m; }, 'reveal');
+});
+$('#revealNext').addEventListener('click', () => {
+  patchMeta(m => { m.status='reveal_judge'; m.revealCount = Math.min(m.players.length, (m.revealCount||0)+1); return m; }, 'reveal next');
+});
+
+$('#saveMax').addEventListener('click', () => {
+  const n = Math.max(1, Math.min(20, Number($('#maxV').value)||1));
+  patchMeta(m => { m.maxVotesPerDevice = n; return m; }, 'max votes');
+});
+
+$('#saveW').addEventListener('click', () => {
+  const j = Number($('#wj').value)||0, a = Number($('#wa').value)||0;
+  if (j + a <= 0) return toast('权重不能都是 0');
+  patchMeta(m => { m.weights = { judge: j/(j+a), audience: a/(j+a) }; return m; }, 'weights');
+});
+
+$('#saveMeta').addEventListener('click', () => {
+  patchMeta(m => { m.title = $('#tTitle').value; m.subtitle = $('#tSub').value; return m; }, 'meta');
+});
+
+$('#addPlayer').addEventListener('click', () => {
+  const tb = $('#pTable tbody');
+  const n = tb.children.length + 1;
+  const id = 'p' + Date.now().toString(36);
+  const tr = document.createElement('tr');
+  tr.dataset.id = id;
+  tr.innerHTML = '<td class="n"><input data-k="no" value="' + n + '" style="width:44px;text-align:center"></td>' +
+    '<td><input data-k="name" value="新选手"></td><td><input data-k="song" value=""></td>' +
+    '<td><input data-k="class" value=""></td><td class="num">0</td>' +
+    '<td class="n"><button class="del danger">删</button></td>';
+  tr.querySelector('.del').addEventListener('click', () => tr.remove());
+  tb.appendChild(tr);
+});
+
+$('#savePlayers').addEventListener('click', async () => {
+  const rows = Array.from($('#pTable tbody').children);
+  const old = {}; META.players.forEach(p => old[p.id] = p);
+  const players = rows.map((tr, i) => {
+    const id = tr.dataset.id;
+    return {
+      id: id,
+      no: Number(tr.querySelector('[data-k=no]').value) || i+1,
+      name: tr.querySelector('[data-k=name]').value.trim(),
+      song: tr.querySelector('[data-k=song]').value.trim(),
+      class: tr.querySelector('[data-k=class]').value.trim(),
+      judges: old[id] ? old[id].judges : []
+    };
+  }).filter(p => p.name);
+  await patchMeta(m => { m.players = players; return m; }, 'players');
+});
+
+$('#jSet').addEventListener('click', () => {
+  const n = Math.max(1, Math.min(20, Number($('#jCount').value)||5));
+  patchMeta(m => { m.judgeCount = n; return m; }, 'judge count');
+});
+
+$('#saveJudge').addEventListener('click', async () => {
+  const rows = Array.from($('#jTable tbody').children);
+  const map = {};
+  rows.forEach(tr => {
+    map[tr.dataset.id] = Array.from(tr.querySelectorAll('input'))
+      .map(i => i.value.trim()).filter(v => v !== '').map(Number).filter(n => !isNaN(n));
+  });
+  await patchMeta(m => {
+    m.players.forEach(p => { if (map[p.id]) p.judges = map[p.id]; });
+    return m;
+  }, 'judges');
+});
+
+$('#exportCsv').addEventListener('click', () => {
+  const rows = SC.rows.slice().sort((a,b)=>a.voteRank-b.voteRank);
+  const head = ['名次(按票数)','序号','姓名','曲目','班级','评委均分','观众票数','总分'];
+  const lines = [head.join(',')];
+  SC.rows.slice().sort((a,b)=>a.rank-b.rank).forEach(p => {
+    lines.push([p.rank,p.no,p.name,p.song,p.class,p.judgeAvg,p.votes,p.final]
+      .map(v => (typeof v === 'string' && /[",\n]/.test(v)) ? '"'+v.replace(/"/g,'""')+'"' : v).join(','));
+  });
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = '歌手大赛成绩.csv'; a.click();
+});
+
+$('#resetVotes').addEventListener('click', async () => {
+  if (!confirm('确定清空所有投票？')) return;
+  const res = await Store.update('votes.json', () => [], 'reset votes');
+  if (res.ok){ VOTES = []; SC = computeScores(META, VOTES); paint(); toast('已清空'); }
+  else toast(res.reason || '失败');
+});
+
+async function boot(){
+  $('#loginBox').style.display = 'none';
+  $('#app').style.display = 'block';
+  try{
+    await load(); paint();
+    setInterval(async () => {
+      try{
+        const v = await Store.read('votes.json');
+        VOTES = v.data || []; SC = computeScores(META, VOTES);
+        $('#sVotes').textContent = SC.totalVotes;
+        paintPlayers();
+      }catch(e){}
+    }, 5000);
+  }catch(e){ toast(e.message); }
+}
+
+if (sessionStorage.getItem('sv_admin') === '1') boot();
+else { $('#loginBox').style.display = 'block'; }
+</script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<title>现场投票</title>
+<style>
+  :root{--bg:#0b1220;--card:rgba(255,255,255,.055);--line:rgba(255,255,255,.10);
+    --gold:#e9bd75;--text:#eef3fb;--dim:#8b9ab0;--ok:#38d39f;--warn:#ff9f43}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;min-height:100vh;padding:22px 18px 132px;
+    background:radial-gradient(700px 420px at 80% -6%,rgba(76,141,255,.20),transparent 60%),
+      radial-gradient(600px 400px at 0% 104%,rgba(233,189,117,.12),transparent 60%),var(--bg);
+    color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    font-variant-numeric:tabular-nums}
+  .head h1{margin:0;font-size:22px;font-weight:800}
+  .head p{margin:7px 0 0;font-size:13px;color:var(--dim);letter-spacing:1px}
+  .status{display:flex;align-items:center;gap:8px;margin:13px 0 0;font-size:13px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:#5b6b82}
+  .dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+  .dot.warn{background:var(--warn)}
+
+  .quota{display:flex;justify-content:space-between;align-items:center;margin:16px 0 10px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 15px}
+  .quota b{color:var(--gold);font-size:20px}
+  .quota span{font-size:13px;color:var(--dim)}
+
+  .codebox{display:flex;gap:10px;align-items:center;margin:0 0 12px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .codebox label{font-size:13px;color:var(--dim);white-space:nowrap}
+  .codebox input{flex:1;background:transparent;border:0;outline:none;color:var(--gold);
+    font-size:22px;font-weight:800;letter-spacing:8px;text-transform:uppercase;
+    font-family:inherit;text-align:center}
+
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;align-items:center;gap:14px;padding:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:16px;transition:.16s}
+  .item.sel{border-color:var(--gold);background:rgba(233,189,117,.10)}
+  .item.off{opacity:.38}
+  .no{width:34px;height:34px;flex:none;border-radius:10px;background:rgba(255,255,255,.08);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--dim)}
+  .item.sel .no{background:var(--gold);color:#231704}
+  .info{flex:1;min-width:0}
+  .info .n{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info .s{font-size:12px;color:var(--dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tick{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.22);flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:13px;color:#231704}
+  .item.sel .tick{border-color:var(--gold);background:var(--gold);font-weight:800}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(11,18,32,0),rgba(11,18,32,.96) 34%)}
+  .btn{width:100%;padding:17px;border:0;border-radius:16px;font-size:17px;font-weight:800;
+    font-family:inherit;background:var(--gold);color:#231704;letter-spacing:1px}
+  .btn:disabled{background:rgba(255,255,255,.10);color:#6f7f96}
+
+  .done{text-align:center;padding:50px 18px}
+  .done .ico{width:86px;height:86px;border-radius:50%;background:rgba(56,211,159,.14);
+    border:2px solid var(--ok);display:flex;align-items:center;justify-content:center;
+    margin:0 auto 22px;font-size:40px;color:var(--ok)}
+  .done h2{margin:0 0 12px;font-size:21px}
+  .done p{margin:0;color:var(--dim);font-size:14px;line-height:2}
+  .done b{color:var(--gold)}
+
+  .toast{position:fixed;left:50%;bottom:126px;transform:translateX(-50%) translateY(16px);
+    background:rgba(255,90,90,.95);color:#fff;padding:12px 20px;border-radius:26px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.25s;max-width:86vw;text-align:center;z-index:9}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .empty{text-align:center;color:var(--dim);font-size:14px;padding:44px 0;line-height:2}
+  .banner{margin:0 0 12px;padding:10px 14px;border-radius:12px;font-size:12px;
+    background:rgba(255,159,67,.12);border:1px solid rgba(255,159,67,.35);color:#ffcf9a;display:none}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1 id="title">校园歌手大赛</h1>
+  <p id="subtitle">决赛 · 现场投票</p>
+  <div class="status"><span class="dot" id="dot"></span><span id="statText">正在加载…</span></div>
+</div>
+
+<div class="banner" id="banner">当前是本地演示模式：投票只存在这台手机上，不会汇总。请在 app/config.js 里填 GitHub token。</div>
+<div id="main"></div>
+<div class="bar"><button class="btn" id="submit" disabled>请选择选手</button></div>
+<div class="toast" id="toast"></div>
+
+<script src="app/config.js"></script>
+<script src="app/store.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const FP = deviceFp();
+let META = null, VOTES = [], picked = new Set(), myUsed = 0, myPids = new Set(), ready = false;
+
+function toast(m){
+  const t = $('toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+if (!Store.remote) $('banner').style.display = 'block';
+
+async function load(){
+  try{
+    const m = await Store.read('meta.json');
+    META = m.data;
+    const v = await Store.read('votes.json');
+    VOTES = v.data || [];
+    recalcMine();
+    ready = true;
+    render();
+  }catch(e){
+    $('statText').textContent = '加载失败：' + e.message;
+    $('dot').className = 'dot warn';
+  }
+}
+
+function recalcMine(){
+  const mine = VOTES.filter(x => x.fp === FP);
+  myUsed = mine.length;
+  myPids = new Set(mine.map(x => x.pid));
+}
+
+function remain(){ return Math.max(0, (META.maxVotesPerDevice || 1) - myUsed); }
+
+function render(){
+  if (!META) return;
+  $('title').textContent = META.title;
+  $('subtitle').textContent = META.subtitle;
+
+  const st = META.status;
+  const map = { idle:'投票还没开始', running:'比赛进行中，唱完统一投票', voting:'投票开放中',
+    closed:'投票已结束', reveal_judge:'正在揭晓', reveal_audience:'正在揭晓', final:'比赛已结束' };
+  let extra = '';
+  if (st === 'voting' && META.deadline > Date.now()){
+    const s = Math.ceil((META.deadline - Date.now()) / 1000);
+    extra = ' · 剩余 ' + String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+  }
+  $('statText').textContent = (map[st] || st) + extra;
+  $('dot').className = 'dot ' + (st === 'voting' ? 'on' : (st === 'closed' || st === 'final' ? 'warn' : ''));
+
+  if (remain() <= 0) return renderDone();
+
+  if (st !== 'voting'){
+    $('main').innerHTML = '<div class="empty">' + (map[st] || st) +
+      '<br><br>请等主持人宣布「开放投票」后再扫一次</div>';
+    $('submit').disabled = true;
+    $('submit').textContent = '暂未开放';
+    return;
+  }
+
+  const prevCode = ($('code') && $('code').value) || '';
+  const list = META.players.slice().sort((a,b)=>a.no-b.no);
+
+  $('main').innerHTML =
+    '<div class="quota"><span>每人可投 <b>' + (META.maxVotesPerDevice||1) + '</b> 票，同一选手只能投一次</span>' +
+      '<span>还可投 <b>' + remain() + '</b> 票</span></div>' +
+    '<div class="codebox"><label>口令</label>' +
+      '<input id="code" maxlength="8" placeholder="大屏上的四个字" autocomplete="off"></div>' +
+    '<div class="list" id="list">' + list.map(p =>
+      '<div class="item" data-id="' + p.id + '">' +
+        '<div class="no">' + String(p.no).padStart(2,'0') + '</div>' +
+        '<div class="info"><div class="n">' + esc(p.name) + '</div>' +
+        '<div class="s">《' + esc(p.song) + '》' + (p.class ? ' · ' + esc(p.class) : '') + '</div></div>' +
+        '<div class="tick"></div></div>').join('') + '</div>';
+
+  if (prevCode) $('code').value = prevCode;
+
+  document.querySelectorAll('.item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      if (picked.has(id)) { picked.delete(id); el.classList.remove('sel'); }
+      else {
+        if (picked.size >= remain()) { toast('最多还能投 ' + remain() + ' 票'); return; }
+        picked.add(id); el.classList.add('sel');
+      }
+      syncBar();
+    });
+  });
+  syncBar();
+}
+
+function syncBar(){
+  const n = picked.size, r = remain();
+  const b = $('submit');
+  if (n === 0){ b.disabled = true; b.textContent = '请选择选手'; }
+  else { b.disabled = false; b.textContent = '确认投出 ' + n + ' 票'; }
+  const q = document.querySelector('.quota');
+  if (q) q.innerHTML = '<span>每人可投 <b>' + (META.maxVotesPerDevice||1) +
+    '</b> 票，同一选手只能投一次</span><span>还可投 <b>' + (r - n) + '</b> 票</span>';
+}
+
+function renderDone(){
+  const names = META.players.filter(p => myPids.has(p.id)).map(p => p.name).join('、');
+  $('main').innerHTML = '<div class="done"><div class="ico">✓</div><h2>投票成功</h2>' +
+    '<p>你投给了<br><b>' + esc(names || '') + '</b><br><br>票数会实时显示在现场大屏上</p></div>';
+  $('submit').disabled = true;
+  $('submit').textContent = '这台设备已投完';
+}
+
+$('submit').addEventListener('click', async () => {
+  if (!picked.size || !META) return;
+  const codeEl = $('code');
+  const code = (codeEl ? codeEl.value : '').trim().toUpperCase();
+  if (!code){ toast('请先输入大屏上的投票口令'); return; }
+  if (code !== String(META.voteCode || '').toUpperCase()){
+    toast('口令不对，看一下大屏上的四个字'); return;
+  }
+
+  const picks = Array.from(picked);
+  $('submit').disabled = true;
+  $('submit').textContent = '提交中…';
+
+  const limit = META.maxVotesPerDevice || 1;
+  const res = await Store.update('votes.json', (base) => {
+    const arr = Array.isArray(base) ? base.slice() : [];
+    const mine = arr.filter(v => v.fp === FP);
+    if (mine.length >= limit) throw new Error('这台设备已经投满了');
+    const had = new Set(mine.map(v => v.pid));
+    const add = picks.filter(pid => !had.has(pid)).slice(0, limit - mine.length);
+    if (!add.length) throw new Error('这些选手你已经投过了');
+    add.forEach(pid => arr.push({ fp: FP, pid: pid, ts: Date.now() }));
+    return arr;
+  }, 'vote: ' + picks.join(','));
+
+  if (res.ok){
+    VOTES = res.data;
+    recalcMine();
+    picked.clear();
+    if (navigator.vibrate) navigator.vibrate(40);
+    renderDone();
+  } else {
+    toast(res.reason && res.reason !== 'rejected' ? res.reason : '提交失败，请重试');
+    load();
+    $('submit').disabled = false;
+    syncBar();
+  }
+});
+
+load();
+setInterval(async () => {
+  try{
+    const m = await Store.read('meta.json');
+    if (m.data){
+      const changed = !META || m.data.status !== META.status ||
+        m.data.maxVotesPerDevice !== META.maxVotesPerDevice ||
+        m.data.voteCode !== META.voteCode;
+      META = m.data;
+      if (changed && ready) render();
+    }
+  }catch(e){}
+}, 8000);
+</script>
+</body>
+</html>
