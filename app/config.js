@@ -13,7 +13,7 @@ window.APP_CONFIG = {
   // GitHub 细粒度访问令牌（Fine-grained token），权限只勾：
   //   Contents → Read and write，仓库只选这一个
   // 留空 = 本地演示模式（只存在本机浏览器里，多台手机之间不同步）
-  token: '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',
+  token: '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',
 
   // 后台口令（只是进门提示，不是真安全；真正的防护是比赛后删 token）
   adminKey: '8888',
