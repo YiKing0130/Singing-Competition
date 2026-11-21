@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>歌手大赛 · 投票系统</title>
+<style>
+  :root{--bg:#0b1220;--gold:#e9bd75;--text:#eef3fb;--dim:#8b9ab0;--line:rgba(255,255,255,.12)}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(900px 600px at 70% -10%,rgba(76,141,255,.18),transparent 60%),var(--bg);
+    color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px}
+  .box{width:100%;max-width:520px}
+  h1{margin:0 0 6px;font-size:26px}
+  p.sub{margin:0 0 26px;color:var(--dim);font-size:14px}
+  a.card{display:flex;align-items:center;gap:16px;padding:18px;margin-bottom:12px;border-radius:14px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);text-decoration:none;color:var(--text);transition:.18s}
+  a.card:hover{border-color:var(--gold);background:rgba(233,189,117,.08)}
+  .ico{width:42px;height:42px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:rgba(233,189,117,.16);color:var(--gold);font-size:19px;font-weight:800}
+  .t{font-size:16px;font-weight:700}
+  .d{font-size:12px;color:var(--dim);margin-top:3px}
+  .tip{margin-top:22px;font-size:12px;color:#5f6f88;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>校园歌手大赛 · 投票系统</h1>
+  <p class="sub">请选择要打开的页面</p>
+
+  <a class="card" href="/screen">
+    <div class="ico">屏</div>
+    <div><div class="t">大屏展示页</div><div class="d">投影用，实时票数与排名，全屏播放</div></div>
+  </a>
+  <a class="card" href="/vote">
+    <div class="ico">投</div>
+    <div><div class="t">观众投票页</div><div class="d">手机扫码进入，输入口令后投票</div></div>
+  </a>
+  <a class="card" href="/admin">
+    <div class="ico">控</div>
+    <div><div class="t">后台控制台</div><div class="d">流程切换、评委打分、名单与权重设置</div></div>
+  </a>
+
+  <div class="tip">
+    比赛开始前请确认：大屏页已全屏、后台已登录、投票口令已显示在大屏上。<br>
+    数据保存在程序目录的 data/db.json，赛后请备份。
+  </div>
+</div>
+</body>
+</html>

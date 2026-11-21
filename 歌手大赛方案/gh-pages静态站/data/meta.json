@@ -1,0 +1,113 @@
+{
+  "title": "2026 校园歌手大赛",
+  "subtitle": "决赛 · 现场投票",
+  "status": "idle",
+  "voteCode": "A7K2",
+  "weights": {
+    "judge": 0.6,
+    "audience": 0.4
+  },
+  "judgeCount": 5,
+  "maxVotesPerDevice": 3,
+  "deadline": 0,
+  "currentPlayer": 0,
+  "revealCount": 0,
+  "players": [
+    {
+      "id": "p1",
+      "no": 1,
+      "name": "林小满",
+      "song": "夜空中最亮的星",
+      "class": "计算机 2301",
+      "judges": []
+    },
+    {
+      "id": "p2",
+      "no": 2,
+      "name": "陈鹿",
+      "song": "起风了",
+      "class": "软件 2302",
+      "judges": []
+    },
+    {
+      "id": "p3",
+      "no": 3,
+      "name": "苏禾",
+      "song": "光年之外",
+      "class": "中文 2301",
+      "judges": []
+    },
+    {
+      "id": "p4",
+      "no": 4,
+      "name": "周允",
+      "song": "我只在乎你",
+      "class": "法学 2303",
+      "judges": []
+    },
+    {
+      "id": "p5",
+      "no": 5,
+      "name": "何一诺",
+      "song": "如愿",
+      "class": "临床 2301",
+      "judges": []
+    },
+    {
+      "id": "p6",
+      "no": 6,
+      "name": "沈星野",
+      "song": "海阔天空",
+      "class": "机械 2302",
+      "judges": []
+    },
+    {
+      "id": "p7",
+      "no": 7,
+      "name": "许知遥",
+      "song": "慢冷",
+      "class": "新闻 2301",
+      "judges": []
+    },
+    {
+      "id": "p8",
+      "no": 8,
+      "name": "白露",
+      "song": "可能",
+      "class": "数学 2301",
+      "judges": []
+    },
+    {
+      "id": "p9",
+      "no": 9,
+      "name": "江照",
+      "song": "这世界那么多人",
+      "class": "经济 2302",
+      "judges": []
+    },
+    {
+      "id": "p10",
+      "no": 10,
+      "name": "顾南",
+      "song": "山海",
+      "class": "材料 2301",
+      "judges": []
+    },
+    {
+      "id": "p11",
+      "no": 11,
+      "name": "温言",
+      "song": "红豆",
+      "class": "英语 2301",
+      "judges": []
+    },
+    {
+      "id": "p12",
+      "no": 12,
+      "name": "程野",
+      "song": "生生",
+      "class": "电子 2302",
+      "judges": []
+    }
+  ]
+}

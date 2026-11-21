@@ -1,0 +1,10 @@
+{
+  "name": "singer-vote",
+  "version": "1.0.0",
+  "private": true,
+  "description": "校园歌手大赛 H5 投票与大屏",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

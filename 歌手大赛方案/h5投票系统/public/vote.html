@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<title>现场投票</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:rgba(255,255,255,.055); --line:rgba(255,255,255,.10);
+    --gold:#e9bd75; --text:#eef3fb; --dim:#8b9ab0; --ok:#38d39f; --warn:#ff9f43;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;min-height:100vh;background:
+      radial-gradient(700px 420px at 80% -6%, rgba(76,141,255,.20), transparent 60%),
+      radial-gradient(600px 400px at 0% 104%, rgba(233,189,117,.12), transparent 60%),
+      var(--bg);
+    color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    padding:22px 18px 120px;font-variant-numeric:tabular-nums;
+  }
+  .head{padding:6px 4px 18px}
+  .head h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.5px}
+  .head p{margin:7px 0 0;font-size:13px;color:var(--dim);letter-spacing:1px}
+  .status{display:flex;align-items:center;gap:8px;margin:14px 0 0;font-size:13px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:#5b6b82}
+  .dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+  .dot.warn{background:var(--warn)}
+
+  .codebox{display:flex;gap:10px;align-items:center;margin:16px 0 18px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .codebox label{font-size:13px;color:var(--dim);white-space:nowrap}
+  .codebox input{flex:1;background:transparent;border:0;outline:none;color:var(--gold);
+    font-size:22px;font-weight:800;letter-spacing:8px;text-transform:uppercase;font-family:inherit;text-align:center}
+
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;align-items:center;gap:14px;padding:14px 14px;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;transition:.18s}
+  .item.sel{border-color:var(--gold);background:rgba(233,189,117,.10)}
+  .no{width:34px;height:34px;flex:none;border-radius:10px;background:rgba(255,255,255,.08);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--dim)}
+  .item.sel .no{background:var(--gold);color:#231704}
+  .info{flex:1;min-width:0}
+  .info .n{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info .s{font-size:12px;color:var(--dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tick{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.22);flex:none}
+  .item.sel .tick{border-color:var(--gold);background:var(--gold)}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(11,18,32,0),rgba(11,18,32,.96) 34%)}
+  .btn{width:100%;padding:17px;border:0;border-radius:16px;font-size:17px;font-weight:800;
+    font-family:inherit;background:var(--gold);color:#231704;letter-spacing:2px}
+  .btn:disabled{background:rgba(255,255,255,.10);color:#6f7f96}
+
+  .done{text-align:center;padding:60px 20px}
+  .done .ico{width:86px;height:86px;border-radius:50%;background:rgba(56,211,159,.14);
+    border:2px solid var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
+    font-size:42px;color:var(--ok)}
+  .done h2{margin:0 0 10px;font-size:22px}
+  .done p{margin:0;color:var(--dim);font-size:14px;line-height:1.9}
+  .done b{color:var(--gold)}
+
+  .toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%) translateY(20px);
+    background:rgba(255,90,90,.95);color:#fff;padding:12px 22px;border-radius:30px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.25s;max-width:86vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .empty{text-align:center;color:var(--dim);font-size:14px;padding:40px 0}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1 id="title">校园歌手大赛</h1>
+  <p id="subtitle">决赛 · 现场投票</p>
+  <div class="status"><span class="dot" id="dot"></span><span id="statText">正在加载…</span></div>
+</div>
+
+<div id="main"></div>
+<div class="bar"><button class="btn" id="submit" disabled>请选择选手</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- 设备指纹 ---------- */
+function uuid(){
+  const k='sv_fp';
+  let v=localStorage.getItem(k);
+  if(!v){
+    v = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(k, v);
+  }
+  return v;
+}
+function canvasHash(){
+  try{
+    const c=document.createElement('canvas'); const ctx=c.getContext('2d');
+    ctx.textBaseline='top'; ctx.font='14px Arial'; ctx.fillStyle='#123'; ctx.fillText('singer-vote-2026',2,2);
+    return c.toDataURL().slice(-32);
+  }catch(e){ return 'na'; }
+}
+const FP = uuid() + '.' + canvasHash().slice(0,16);
+
+/* ---------- 状态 ---------- */
+let S=null, picked=null, voted=false, timer=null, lastSig='';
+
+const $ = (id)=>document.getElementById(id);
+
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+async function poll(){
+  try{
+    const r = await fetch('/api/state',{cache:'no-store'});
+    S = await r.json();
+    render();
+  }catch(e){
+    $('statText').textContent = '网络不太好，正在重试…';
+    $('dot').className='dot warn';
+  }
+}
+
+function render(){
+  $('title').textContent = S.title;
+  $('subtitle').textContent = S.subtitle;
+
+  const st=S.status;
+  const txt = {idle:'投票还没开始',running:'比赛进行中，唱完统一投票',voting:'投票开放中',closed:'投票已结束',
+    reveal_judge:'正在揭晓',reveal_audience:'正在揭晓',final:'比赛已结束'}[st]||st;
+  let extra='';
+  if(st==='voting' && S.remainMs>0){
+    const s=Math.ceil(S.remainMs/1000);
+    extra=' · 剩余 '+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  }
+  $('statText').textContent = txt + extra;
+  $('dot').className='dot '+(st==='voting'?'on':(st==='closed'||st==='final'?'warn':''));
+
+  if(voted) return renderDone(localStorage.getItem('sv_voted_name')||'');
+
+  if(st!=='voting'){
+    $('main').innerHTML = `<div class="empty">${txt}<br><br>请等主持人宣布开放投票后再进入</div>`;
+    $('submit').disabled = true;
+    $('submit').textContent='暂未开放';
+    return;
+  }
+
+  // 投票列表：状态与名单没变就不重建，避免把正在输入的指令/选择清掉
+  const sig = st + '|' + S.players.map(p=>p.id).join(',');
+  if($('list') && sig === lastSig && document.querySelector('.item')){
+    return;
+  }
+  lastSig = sig;
+  const keep = picked;
+  const prevCode = ($('code') && $('code').value) || '';
+  $('main').innerHTML = `
+    <div class="codebox">
+      <label>口令</label>
+      <input id="code" maxlength="8" placeholder="大屏上的四个字" autocomplete="off">
+    </div>
+    <div class="list" id="list">
+      ${S.players.map(p=>`
+        <div class="item" data-id="${p.id}">
+          <div class="no">${String(p.no).padStart(2,'0')}</div>
+          <div class="info"><div class="n">${esc(p.name)}</div><div class="s">《${esc(p.song)}》${p.class?' · '+esc(p.class):''}</div></div>
+          <div class="tick"></div>
+        </div>`).join('')}
+    </div>`;
+
+  document.querySelectorAll('.item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.item').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      picked = el.dataset.id;
+      $('submit').disabled=false;
+      $('submit').textContent='投给 TA';
+    });
+  });
+  if(keep){ const el=document.querySelector(`.item[data-id="${keep}"]`); if(el) el.click(); }
+  if(prevCode) $('code').value = prevCode;
+  $('submit').disabled = !picked;
+  $('submit').textContent = picked ? '投给 TA' : '请选择选手';
+}
+
+function esc(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderDone(name){
+  $('main').innerHTML = `
+    <div class="done">
+      <div class="ico">✓</div>
+      <h2>投票成功</h2>
+      <p>你投给了 <b>${esc(name||'')}</b><br>票数会实时显示在现场大屏上</p>
+    </div>`;
+  $('submit').disabled = true;
+  $('submit').textContent='这台设备已投过票';
+}
+
+/* ---------- 提交 ---------- */
+$('submit').addEventListener('click', async ()=>{
+  if(!picked || !S || S.status!=='voting') return;
+  const codeEl = $('code');
+  const code = codeEl ? codeEl.value.trim() : '';
+  if(!code){ toast('请先输入大屏上的投票口令'); return; }
+  if(localStorage.getItem('sv_voted')==='1'){
+    toast('这台设备已经投过票了');
+    return;
+  }
+  $('submit').disabled = true;
+  $('submit').textContent = '提交中…';
+  try{
+    const r = await fetch('/api/vote',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({playerId:picked, code, fp:FP})
+    });
+    const j = await r.json();
+    if(j.ok){
+      voted = true;
+      localStorage.setItem('sv_voted','1');
+      localStorage.setItem('sv_voted_name', j.name||'');
+      renderDone(j.name);
+      if(navigator.vibrate) navigator.vibrate(40);
+    }else{
+      toast(j.msg||'投票失败');
+      $('submit').disabled=false;
+      $('submit').textContent='投给 TA';
+    }
+  }catch(e){
+    toast('网络异常，请重试');
+    $('submit').disabled=false;
+    $('submit').textContent='投给 TA';
+  }
+});
+
+/* 已投过票的设备，直接显示结果 */
+if(localStorage.getItem('sv_voted')==='1'){
+  voted = true;
+}
+poll();
+timer = setInterval(poll, 3000);
+</script>
+</body>
+</html>

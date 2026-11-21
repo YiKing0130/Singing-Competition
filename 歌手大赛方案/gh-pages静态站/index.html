@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>歌手大赛 · 投票系统</title>
+<style>
+  :root{--bg:#0b1220;--gold:#e9bd75;--text:#eef3fb;--dim:#8b9ab0;--line:rgba(255,255,255,.12)}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(900px 600px at 70% -10%,rgba(76,141,255,.18),transparent 60%),var(--bg);
+    color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .box{width:100%;max-width:520px}
+  h1{margin:0 0 6px;font-size:25px}
+  p.sub{margin:0 0 24px;color:var(--dim);font-size:14px}
+  a.card{display:flex;align-items:center;gap:16px;padding:17px;margin-bottom:11px;border-radius:14px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);text-decoration:none;color:var(--text);transition:.18s}
+  a.card:hover{border-color:var(--gold);background:rgba(233,189,117,.08)}
+  .ico{width:42px;height:42px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:rgba(233,189,117,.16);color:var(--gold);font-size:19px;font-weight:800}
+  .t{font-size:16px;font-weight:700}
+  .d{font-size:12px;color:var(--dim);margin-top:3px}
+  .tip{margin-top:20px;font-size:12px;color:#5f6f88;line-height:1.9}
+  .tip b{color:#8fa4bd}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>校园歌手大赛 · 投票系统</h1>
+  <p class="sub">纯静态页面，数据存在 GitHub 仓库里</p>
+
+  <a class="card" href="screen.html">
+    <div class="ico">屏</div>
+    <div><div class="t">大屏展示页</div><div class="d">接投影，实时票数与排名，点击进入后全屏</div></div>
+  </a>
+  <a class="card" href="vote.html">
+    <div class="ico">投</div>
+    <div><div class="t">观众投票页</div><div class="d">手机扫码进入，输口令后投票</div></div>
+  </a>
+  <a class="card" href="admin.html">
+    <div class="ico">控</div>
+    <div><div class="t">后台控制台</div><div class="d">流程切换、每人票数、评委打分、名单</div></div>
+  </a>
+
+  <div class="tip">
+    <b>第一次部署</b>：先改 <b>app/config.js</b>（仓库名 + token），再打开后台。<br>
+    <b>开赛前</b>：后台设「每人可投几票」→ 设投票时长 → 大屏点开始。<br>
+    <b>注意</b>：token 写在前端代码里，比赛结束后请到 GitHub 删除。
+  </div>
+</div>
+</body>
+</html>
