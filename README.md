@@ -1,1 +1,0 @@
-# Singing-Competition
